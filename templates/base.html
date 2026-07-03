@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Message Classifier</title>
+</head>
+<body>
+
+    <h1>Message Classifier</h1>
+
+    <form id="messageForm">
+        <label for="message">Enter your message:</label><br>
+        <textarea id="message" name="message" rows="4" cols="50"></textarea><br>
+        <input type="submit" value="Classify">
+    </form>
+
+    <table id="resultsTable" border="1">
+        <thead>
+            <tr>
+                <th>Message</th>
+                <th>Category</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for message, category in items %}
+            <tr>
+                <td>{{ message }}</td>
+                <td>{{ category }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    
+</body>
+</html>

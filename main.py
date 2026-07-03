@@ -8,6 +8,8 @@ from google import genai
 from google.genai import types
 from openai import OpenAI
 
+from flask import Flask, request, jsonify
+
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
@@ -83,10 +85,12 @@ def parse_args() -> argparse.Namespace:
     )
     return parser.parse_args()
 
+app = Flask(__name__)
 
 def main() -> None:
     config = load_environment()
     args = parse_args()
+
 
 
     api_key = config.get("BAZARLINK_API_KEY")

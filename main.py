@@ -3,6 +3,7 @@ import csv
 """
 Read Data from csv file
 """
+
 def readMessagesFromCSVFile(filename):
 
     try:
@@ -24,6 +25,12 @@ def readMessagesFromCSVFile(filename):
         print(e)
 
 
-messages = readMessagesFromCSVFile("input_data.csv")
 
+def main():
 
+    API_KEY = "?"
+
+    messages = readMessagesFromCSVFile("input_data.csv")
+
+if __name__ == "__main__":
+    main()

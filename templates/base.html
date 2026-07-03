@@ -4,32 +4,67 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Message Classifier</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
+    <div class="page-shell">
+        <header class="hero">
+            <div>
+                <p class="eyebrow">AI-powered workflow</p>
+                <h1>Message Classifier</h1>
+                <p class="hero-copy">Turn everyday messages into clear, structured categories with a cleaner and faster experience.</p>
+            </div>
+        </header>
 
-    <h1>Message Classifier</h1>
+        <main class="content-grid">
+            <section class="panel form-panel">
+                {% if error %}
+                <div class="alert alert-error">{{ error }}</div>
+                {% endif %}
 
-    <form id="messageForm">
-        <label for="message">Enter your message:</label><br>
-        <textarea id="message" name="message" rows="4" cols="50"></textarea><br>
-        <input type="submit" value="Classify">
-    </form>
+                <form id="messageForm" method="post" action="/classify">
+                    <label for="message">Enter a message to classify</label>
+                    <textarea id="message" name="message" placeholder="Type or paste a message here..." required></textarea>
+                    <button type="submit">Classify Message</button>
+                </form>
+            </section>
 
-    <table id="resultsTable" border="1">
-        <thead>
-            <tr>
-                <th>Message</th>
-                <th>Category</th>
-            </tr>
-        </thead>
-        <tbody>
-            {% for message, category in items %}
-            <tr>
-                <td>{{ message }}</td>
-                <td>{{ category }}</td>
-            </tr>
-            {% endfor %}
-        </tbody>
-    
+            <section class="panel results-panel">
+                <div class="panel-heading">
+                    <div>
+                        <p class="eyebrow">Recent results</p>
+                        <h2>Classified Messages</h2>
+                    </div>
+                    <span class="pill">{{ items|length }} saved</span>
+                </div>
+
+                {% if items %}
+                <div class="table-wrap">
+                    <table id="resultsTable">
+                        <thead>
+                            <tr>
+                                <th>Message</th>
+                                <th>Category</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for message, category in items %}
+                            <tr>
+                                <td>{{ message }}</td>
+                                <td><span class="category-tag">{{ category }}</span></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state">
+                    <p>No classified messages yet.</p>
+                    <span>Your latest classifications will appear here.</span>
+                </div>
+                {% endif %}
+            </section>
+        </main>
+    </div>
 </body>
 </html>

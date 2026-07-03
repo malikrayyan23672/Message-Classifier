@@ -2,23 +2,33 @@ import argparse
 import csv
 import logging
 import os
-from typing import List, Tuple
-from dotenv import load_dotenv, dotenv_values
-from google import genai
-from google.genai import types
-from openai import OpenAI
+import sys
+from typing import List, Optional, Tuple
 
-from flask import Flask, request, jsonify
+from dotenv import load_dotenv
+from openai import OpenAI
 
 logging.basicConfig(level=logging.INFO, format="%(message)s")
 logger = logging.getLogger(__name__)
 
 CATEGORIES = ["Enrollment", "Support", "General"]
+DEFAULT_INPUT_FILE = "input_data.csv"
+DEFAULT_OUTPUT_FILE = "classified_output.csv"
+DEFAULT_API_KEY_ENV = "BAZARLINK_API_KEY"
 
 
 def load_environment() -> None:
-    load_dotenv_path = os.path.join(os.path.dirname(__file__), ".env")
-    return dotenv_values(load_dotenv_path) if load_dotenv else None
+    env_path = os.path.join(os.path.dirname(__file__), ".env")
+    load_dotenv(env_path)
+
+
+def get_api_key(env_name: str) -> Optional[str]:
+    load_environment()
+    return os.getenv(env_name)
+
+
+def create_client(api_key: str) -> OpenAI:
+    return OpenAI(api_key=api_key, base_url="https://bazaarlink.ai/api/v1")
 
 
 def read_messages_from_csv(filename: str) -> List[str]:
@@ -36,23 +46,46 @@ def read_messages_from_csv(filename: str) -> List[str]:
     return messages
 
 
-def classify_message(client: genai.Client, message: str) -> str:
+def normalize_category(text: str) -> str:
+    cleaned = text.strip().strip('"').strip()
+    if not cleaned:
+        return "General"
+    candidate = cleaned.split()[0]
+    for category in CATEGORIES:
+        if candidate.lower() == category.lower():
+            return category
+    return "General"
 
 
+def classify_message(client: OpenAI, message: str) -> str:
     response = client.chat.completions.create(
         model="openai/gpt-4.1",
         messages=[
-            {"role": "system", "content": "You are a helpful assistant that classifies messages into one of three categories: Enrollment, Support, or General. Respond with only the single category name."},
+            {
+                "role": "system",
+                "content": (
+                    "You are a helpful assistant that classifies messages into one of three categories: "
+                    "Enrollment, Support, or General. Respond with only the single category name."
+                ),
+            },
             {"role": "user", "content": message},
         ],
+        max_tokens=1000,
+        temperature=0.0,
         stream=False,
-        reasoning_effort="high",
-        extra_body={"thinking": {"type": "enabled"}}
     )
 
-    
-    
-    return response.choices[0].message.content
+    choice = response.choices[0]
+    content = None
+    if hasattr(choice, "message"):
+        content = getattr(choice.message, "content", None)
+    elif isinstance(choice, dict):
+        content = choice.get("message", {}).get("content")
+
+    if not content:
+        raise ValueError("Model response did not contain classification text.")
+
+    return normalize_category(content)
 
 
 def write_classification_results(filename: str, rows: List[Tuple[str, str]]) -> None:
@@ -62,6 +95,15 @@ def write_classification_results(filename: str, rows: List[Tuple[str, str]]) -> 
         writer.writerows(rows)
 
 
+def append_classification_result(filename: str, message: str, category: str) -> None:
+    file_exists = os.path.exists(filename)
+    with open(filename, "a", newline="", encoding="utf-8") as csvfile:
+        writer = csv.writer(csvfile)
+        if not file_exists:
+            writer.writerow(["message", "category"])
+        writer.writerow([message, category])
+
+
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Classify incoming messages into Enrollment, Support, or General."
@@ -69,39 +111,37 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "csv_path",
         nargs="?",
-        default="input_data.csv",
+        default=DEFAULT_INPUT_FILE,
         help="Path to the input CSV file.",
     )
     parser.add_argument(
         "--output",
         "-o",
-        default="classified_output.csv",
+        default=DEFAULT_OUTPUT_FILE,
         help="Path to the output CSV file.",
     )
     parser.add_argument(
         "--api-key-env",
-        default="GENAI_API_KEY",
-        help="Environment variable name for the Google GenAI API key.",
+        default=DEFAULT_API_KEY_ENV,
+        help="Environment variable name for the API key.",
     )
     return parser.parse_args()
 
-app = Flask(__name__)
 
 def main() -> None:
-    config = load_environment()
     args = parse_args()
+    api_key = get_api_key(args.api_key_env)
+    if not api_key:
+        logger.error(
+            "Missing API key. Set %s in your environment or in a .env file.",
+            args.api_key_env,
+        )
+        sys.exit(1)
 
-
-
-    api_key = config.get("BAZARLINK_API_KEY")
-
+    client = create_client(api_key)
     messages = read_messages_from_csv(args.csv_path)
-    client = genai.Client(api_key=api_key)
-    client = OpenAI(
-    api_key=api_key,
-    base_url="https://bazaarlink.ai/api/v1")
-
     results: List[Tuple[str, str]] = []
+
     for message in messages:
         try:
             category = classify_message(client, message)

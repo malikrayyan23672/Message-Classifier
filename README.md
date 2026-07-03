@@ -18,7 +18,7 @@ pip install -r requirements.txt
 2. Create a `.env` file or export the API key in your environment:
 
 ```env
-GENAI_API_KEY=your_google_genai_api_key
+BAZARLINK_API_KEY=YOUR BAZAR LINK API
 ```
 
 3. Use `input_data.csv` as your source data, or pass a custom path.
@@ -26,15 +26,12 @@ GENAI_API_KEY=your_google_genai_api_key
 ## Usage
 ```bash
 python main.py input_data.csv --output classified_output.csv
-```
-
-If you use a `.env` file, `python-dotenv` will load it automatically.
 
 ## Output
 The script writes `message` and `category` columns to the specified output file.
 
 ## Notes
-- The script uses the `gemini-3.5-flash` model.
+- The script uses the `gpt-4.1` model.
 - Categories are normalized to `Enrollment`, `Support`, or `General`.
 - Invalid model responses default to `General`.
 

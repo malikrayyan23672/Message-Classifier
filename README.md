@@ -35,3 +35,7 @@ The script writes `message` and `category` columns to the specified output file.
 - Categories are normalized to `Enrollment`, `Support`, or `General`.
 - Invalid model responses default to `General`.
 
+
+## Flask 
+```bash
+flask run

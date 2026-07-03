@@ -34,8 +34,11 @@ The script writes `message` and `category` columns to the specified output file.
 - The script uses the `gpt-4.1` model.
 - Categories are normalized to `Enrollment`, `Support`, or `General`.
 - Invalid model responses default to `General`.
-
+```
 
 ## Flask 
 ```bash
+
 flask run
+
+```
